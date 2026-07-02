@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+html,
+body {
+  background-color: #0a0a12;
+  color: #e7e7f0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ambient gradient wash behind the whole app */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60% 50% at 15% 0%, rgba(139, 92, 246, 0.18), transparent 70%),
+    radial-gradient(55% 45% at 100% 10%, rgba(59, 130, 246, 0.15), transparent 70%),
+    radial-gradient(45% 40% at 50% 100%, rgba(34, 211, 238, 0.08), transparent 70%);
+  pointer-events: none;
+}
+
+@layer components {
+  .glass {
+    @apply rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl;
+    box-shadow: 0 8px 32px -12px rgba(0, 0, 0, 0.6);
+  }
+  .glass-hover {
+    @apply transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07];
+  }
+  .gradient-text {
+    @apply bg-brand-gradient bg-clip-text text-transparent;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-medium;
+  }
+}
+
+/* Thin, subtle scrollbars to match the premium feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
