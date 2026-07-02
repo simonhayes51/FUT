@@ -114,6 +114,7 @@ class SquadSlot(BaseModel):
     name: str
     rating: int
     position: str
+    assigned_position: str = ""  # formation slot this card fills
     club: str
     league: str
     nation: str
@@ -137,6 +138,28 @@ class SolveResult(BaseModel):
     squad: list[SquadSlot]
     to_buy: list[SquadSlot]
     unmet: list[str]
+
+
+class CompleteResult(BaseModel):
+    sbc_id: int
+    sbc_name: str
+    success: bool
+    coins_spent: int
+    club_cards_used: int
+    new_balance: int
+    message: str
+
+
+class SetSolveRequest(BaseModel):
+    sbc_ids: list[int]
+    options: SolveOptions = SolveOptions()
+
+
+class SetSolveResult(BaseModel):
+    results: list[SolveResult]
+    total_coins: int
+    total_club_value_used: int
+    all_feasible: bool
 
 
 class ClubPlayerOut(BaseModel):

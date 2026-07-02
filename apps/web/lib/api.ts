@@ -1,5 +1,7 @@
 import type {
   ClubPlayer,
+  CoachAnswer,
+  CompleteResult,
   Dashboard,
   PlayerDetail,
   PlayerSummary,
@@ -51,5 +53,8 @@ export const api = {
   sbc: (id: number | string) => get<SBC>(`/sbcs/${id}`),
   solve: (id: number | string, opts: SolveOptions) =>
     post<SolveResult>(`/sbcs/${id}/solve`, opts),
+  complete: (id: number | string, opts: SolveOptions) =>
+    post<CompleteResult>(`/sbcs/${id}/complete`, opts),
   club: () => get<ClubPlayer[]>("/club"),
+  coach: (question: string) => post<CoachAnswer>("/coach/ask", { question }),
 };

@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # deterministic heuristic engine so the product is fully functional offline.
     openai_api_key: str | None = Field(default=None)
 
+    # Live market ticker. In dev the API ticks in-process; in production Celery
+    # beat drives ticks and this can be disabled on the web workers.
+    enable_ticker: bool = Field(default=True)
+    tick_interval_seconds: float = Field(default=5.0)
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

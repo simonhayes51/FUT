@@ -111,14 +111,23 @@ export default function SolvePage() {
         {/* Result */}
         <section className="space-y-4">
           {solve.isPending && !result && <div className="glass h-64 animate-pulse" />}
-          {result && <ResultView result={result} />}
+          {result && <ResultView result={result} sbcId={id} opts={opts} />}
         </section>
       </div>
     </div>
   );
 }
 
-function ResultView({ result }: { result: SolveResult }) {
+function ResultView({
+  result,
+  sbcId,
+  opts,
+}: {
+  result: SolveResult;
+  sbcId: string;
+  opts: SolveOptions;
+}) {
+  const complete = useMutation({ mutationFn: () => api.complete(sbcId, opts) });
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
       {/* Summary */}
@@ -135,12 +144,35 @@ function ResultView({ result }: { result: SolveResult }) {
               </span>
             )}
           </div>
-          {result.to_buy.length > 0 && (
-            <button className="rounded-xl bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10">
-              Auto-buy {result.to_buy.length} missing →
+          {result.feasible && (
+            <button
+              onClick={() => complete.mutate()}
+              disabled={complete.isPending || complete.isSuccess}
+              className="flex items-center gap-1.5 rounded-xl bg-brand-gradient px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+            >
+              {complete.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              {result.to_buy.length > 0 ? `Complete (buy ${result.to_buy.length})` : "Complete SBC"}
             </button>
           )}
         </div>
+
+        {complete.data && (
+          <div
+            className={`mt-3 rounded-xl border p-3 text-sm ${
+              complete.data.success
+                ? "border-neon-green/30 bg-neon-green/10 text-neon-green"
+                : "border-neon-red/30 bg-neon-red/10 text-neon-red"
+            }`}
+          >
+            {complete.data.message}
+            {complete.data.success && (
+              <span className="ml-1 text-white/70">
+                Spent {coins(complete.data.coins_spent)}, used {complete.data.club_cards_used} club cards ·
+                new balance {coins(complete.data.new_balance)}.
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat label="Squad Rating" value={`${result.squad_rating}`} ok={result.squad_rating >= result.required_rating} target={`≥ ${result.required_rating}`} />
@@ -211,7 +243,9 @@ function SquadCard({ slot }: { slot: SquadSlot }) {
       />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium">{slot.name}</div>
-        <div className="truncate text-[11px] text-white/40">{slot.league}</div>
+        <div className="truncate text-[11px] text-white/40">
+          <span className="text-brand-violet">{slot.assigned_position}</span> · {slot.league}
+        </div>
       </div>
       <span
         className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase ${

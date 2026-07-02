@@ -70,6 +70,28 @@ returns the squad, the coins-to-buy shopping list, club value consumed, and any
 unmet constraints. Production swaps the heuristic for an ILP/constraint solver
 behind the identical interface.
 
+## Live market (`ticker.py` · `realtime.py` · `celery_app.py`)
+
+`apply_tick` advances every tracked player's BIN by a volatility-scaled random
+walk, appends a price point, drifts supply/demand and fires any crossed price
+alerts — returning the deltas. It runs two ways behind one WebSocket contract
+(`/api/v1/ws/market` streaming `{type:'tick', prices, alerts}`):
+
+- **Dev**: an asyncio loop in the app lifespan ticks in-process and pushes
+  straight to connected clients (zero external services).
+- **Production**: Celery beat runs the tick and publishes to Redis; every API
+  worker subscribes and fans out to *its* WebSocket clients, so ticks reach all
+  clients regardless of which worker they connected to. Set `ENABLE_TICKER=false`
+  on the web workers so only beat drives the tape.
+
+## AI Coach (`coach.py`)
+
+`build_context` assembles a compact live snapshot (top AI picks, movers, best
+SBCs, club fodder value, realised profit). When `OPENAI_API_KEY` is set the
+snapshot grounds an LLM answer; otherwise an intent classifier composes the
+answer from the same snapshot. Identical grounding either way — the LLM only
+changes phrasing, never the facts.
+
 ## Scaling notes (how today's slice grows to "billions of price records")
 
 - **Ingest**: a Celery beat schedule polls the market and bulk-inserts into

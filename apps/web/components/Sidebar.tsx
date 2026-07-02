@@ -19,9 +19,9 @@ const NAV = [
   { href: "/market", label: "Live Market", icon: LineChart },
   { href: "/sbc", label: "SBC Solver", icon: Boxes },
   { href: "/club", label: "My Club", icon: Shield },
+  { href: "/coach", label: "AI Coach", icon: BrainCircuit },
   { href: "/portfolio", label: "Portfolio", icon: Wallet, soon: true },
   { href: "/squad", label: "Squad Builder", icon: Trophy, soon: true },
-  { href: "/coach", label: "AI Coach", icon: BrainCircuit, soon: true },
   { href: "/alerts", label: "Alerts", icon: Bell, soon: true },
 ];
 

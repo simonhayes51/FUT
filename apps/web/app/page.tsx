@@ -6,6 +6,7 @@ import { Bell, Eye, Sparkles, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { coins, coinsFull, scoreColor } from "@/lib/format";
+import { LiveTape } from "@/components/LiveTape";
 import { PlayerRow, ScannerColumn, StatCard } from "@/components/ui";
 
 export default function DashboardPage() {
@@ -30,15 +31,16 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs text-white/50">
-          <span className="chip">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-neon-green" />
-            Live
-          </span>
+          <Link href="/coach" className="chip glass-hover">
+            Ask the AI Coach
+          </Link>
           <Link href="/market" className="chip glass-hover">
             Open Market
           </Link>
         </div>
       </header>
+
+      <LiveTape />
 
       {/* AI assistant briefing */}
       <motion.div

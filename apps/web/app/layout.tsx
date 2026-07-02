@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { LiveProvider } from "@/components/LiveProvider";
 import { Providers } from "@/components/Providers";
 import { Sidebar } from "@/components/Sidebar";
 
@@ -25,6 +26,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen">
         <Providers>
+          <LiveProvider />
           <div className="mx-auto flex max-w-[1400px]">
             <Sidebar />
             <main className="min-w-0 flex-1 px-4 py-6 md:px-8">{children}</main>

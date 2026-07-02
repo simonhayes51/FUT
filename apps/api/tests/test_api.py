@@ -116,6 +116,60 @@ def test_solve_endpoint_objectives():
         assert len(body["squad"]) == 11
 
 
+def test_formation_assignment():
+    from app.formations import assign, matched_count
+
+    # A textbook 4-3-3 line-up is fully assignable.
+    positions = ["GK", "RB", "CB", "CB", "LB", "CM", "CM", "CM", "RW", "ST", "LW"]
+    slots = ["GK", "RB", "CB", "CB", "LB", "CM", "CM", "CM", "RW", "ST", "LW"]
+    assert assign(positions, slots) is not None
+    # Eleven strikers cannot fill a back line.
+    assert matched_count(["ST"] * 11, slots) < 11
+
+
+def test_solver_v2_assigns_positions():
+    from app.solver import solve
+
+    slots = ["GK", "RB", "CB", "CB", "LB", "CM", "CM", "CM", "RW", "ST", "LW"]
+    pool = [
+        _cand(85, league="Serie A", nation="Italy", club=f"C{i}")
+        for i in range(30)
+    ]
+    for c, pos in zip(pool, (slots * 3)):
+        c.position = pos
+    sol = solve(pool, size=11, min_rating=84, min_chemistry=15,
+                objective="cheapest", formation="4-3-3")
+    assert sol.feasible
+    assert all(c.assigned_position for c in sol.squad)
+
+
+def test_coach_answers_and_grounds_in_data():
+    for q in ("What should I invest in?", "How do I make 500k?", "Which SBC should I do?"):
+        r = client.post("/api/v1/coach/ask", json={"question": q})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["engine"] == "heuristic"  # no OPENAI key in tests
+        assert len(body["answer"]) > 20
+        assert len(body["suggestions"]) == 4
+
+
+def test_solve_set_returns_per_sbc_results():
+    r = client.post("/api/v1/sbcs/solve-set", json={"sbc_ids": [1, 2], "options": {}})
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body["results"]) == 2
+    assert "total_coins" in body
+
+
+def test_complete_sbc_spends_and_consumes():
+    before = client.get("/api/v1/dashboard").json()["coin_balance"]
+    r = client.post("/api/v1/sbcs/1/complete", json={"objective": "cheapest"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["success"] is True
+    assert body["new_balance"] == before - body["coins_spent"]
+
+
 def test_high_demand_low_supply_scores_higher():
     """The engine must reward demand pressure — a core trust property."""
     import datetime as dt

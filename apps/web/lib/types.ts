@@ -101,11 +101,28 @@ export interface SolveOptions {
   max_card_rating?: number | null;
 }
 
+export interface CoachAnswer {
+  answer: string;
+  engine: "llm" | "heuristic";
+  suggestions: string[];
+}
+
+export interface CompleteResult {
+  sbc_id: number;
+  sbc_name: string;
+  success: boolean;
+  coins_spent: number;
+  club_cards_used: number;
+  new_balance: number;
+  message: string;
+}
+
 export interface SquadSlot {
   player_id: number;
   name: string;
   rating: number;
   position: string;
+  assigned_position: string;
   club: string;
   league: string;
   nation: string;

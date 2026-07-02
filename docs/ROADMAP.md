@@ -7,18 +7,24 @@ How the full product spec maps onto phases. **Phase 0 is what ships in this repo
 - Monorepo, Docker stack, SQLite/Postgres portability, seeded demo data.
 - Dashboard, AI rating engine, Market Scanner, Live Market search, Player
   Intelligence page with interactive charts, SBC Centre.
-- **AI SBC Solver** — real squad-rating + chemistry engine with cheapest /
-  highest-rated / least-club-loss objectives, protect flags and a shopping list.
+- **AI SBC Solver** — real squad-rating + chemistry + formation position-slotting
+  with cheapest / highest-rated / least-club-loss objectives, protect flags,
+  a shopping list, one-click completion (spend + consume) and whole-set solving.
 - **Club Manager** — imported club, duplicates, fodder value, protection flags.
+- **Live market** — WebSocket price tape + alert fan-out (in-process ticker in
+  dev; Celery beat + Redis pub/sub in production).
+- **AI Coach** — natural-language answers grounded in live market + club data,
+  LLM-backed when a key is present, deterministic heuristic otherwise.
 - Premium dark/glass design system, PWA manifest, mobile-first layout.
 
 ## Phase 1 — Live data & realtime
 
-- **Price ingest pipeline** (Celery beat) writing `price_history` continuously.
+- ✅ **Price ingest pipeline** (Celery beat) + in-process dev ticker writing
+  `price_history` and firing alerts continuously.
+- ✅ **WebSockets** for live price ticks and alert triggers (Redis pub/sub fan-out).
 - **Materialised views** for hourly/daily/weekly/monthly graphs + scanner.
-- **WebSockets** for live price ticks and alert triggers.
 - **Redis caching** on hot endpoints; infinite scroll on market lists.
-- Price prediction model (time-series) feeding "expected movement / peak".
+- Real market data source; price prediction model feeding "expected movement / peak".
 
 ## Phase 2 — Accounts, portfolio & alerts
 
@@ -40,7 +46,9 @@ How the full product spec maps onto phases. **Phase 0 is what ships in this repo
 
 ## Phase 4 — Coach, content & community
 
-- **AI Coach** (LLM over live market data): "What should I invest in?", "How do I make 500k?".
+- ✅ **AI Coach** (LLM over live market data, offline heuristic fallback):
+  "What should I invest in?", "How do I make 500k?". Next: conversation memory,
+  tool-use to place alerts / trigger solves directly from chat.
 - **Roadmap Generator**: personalised daily/weekly tasks, coin & reward forecast.
 - **News Centre**, **Pack Centre** (odds, EV, simulator), **Objectives** tracker.
 - **Community**: profiles, follows, trading/investment posts, premium creators.

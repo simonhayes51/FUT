@@ -27,8 +27,10 @@ What runs today, fully wired frontend → API → database:
 | **Live Market** — player search + league/rating filters | ✅ |
 | **Player Intelligence page** — interactive price chart (1D/1W/1M/All), lowest/highest BIN, volume, volatility, supply/demand | ✅ |
 | **SBC Centre** — cost, pack value, net profit, value rating, expiry, "worth completing?" verdict | ✅ |
-| **AI SBC Solver** — real squad-building engine (FUT squad-rating + FC 24/25 chemistry) that solves each SBC for *cheapest / highest-rated / least club value lost*, honours protect-icons/favourites/first-owner, and produces a shopping list of missing cards | ✅ |
+| **AI SBC Solver** — real squad-building engine (FUT squad-rating + FC 24/25 chemistry + **formation position-slotting**) that solves each SBC for *cheapest / highest-rated / least club value lost*, honours protect-icons/favourites/first-owner, produces a shopping list, **one-click completes** (spends coins, consumes fodder), and **solves whole SBC sets** against a shared club | ✅ |
 | **Club Manager** — imported club with duplicates, fodder value, protection flags (the solver's raw material) | ✅ |
+| **Live market** — WebSocket price tape streaming real-time ticks with alert fan-out (in-process in dev, Celery beat + Redis in prod) | ✅ |
+| **AI Coach** — chat that answers "what to buy / sell / which SBC / how to make 500k" grounded in live market + club data; LLM-backed when `OPENAI_API_KEY` is set, deterministic offline otherwise | ✅ |
 | **Premium design system** — dark, glassmorphism, purple/blue gradients, neon accents, Framer Motion, mobile-first, PWA manifest | ✅ |
 
 Everything is backed by a realistic **seeded dataset** (30 players, ~7k price points,
@@ -68,10 +70,15 @@ apps/
   api/   FastAPI + SQLAlchemy + Pydantic
          └─ ai.py           deterministic, explainable rating engine
          └─ solver.py       AI SBC Solver — squad-rating + chemistry + search
+         └─ formations.py   formation position-slotting (bipartite matching)
+         └─ coach.py        AI Coach — LLM + offline heuristic over live data
+         └─ ticker.py       live market tick engine (prices + alert firing)
+         └─ realtime.py     WebSocket connection manager
+         └─ celery_app.py   production tick scheduling (beat + Redis fan-out)
          └─ models.py       players · price_history · analytics · users
                             · investments · trades · watchlist · alerts
                             · sbcs · club_players
-         └─ routers/        dashboard · market · players · sbc · club
+         └─ routers/        dashboard · market · players · sbc · club · coach
          └─ seed.py         reproducible demo dataset
   web/   Next.js 14 (App Router) + TS + Tailwind + Framer Motion
          + React Query + Zustand

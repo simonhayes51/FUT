@@ -17,6 +17,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .formations import assign_partial, matched_count, slots_for
+
 # Modern chemistry thresholds: count of squad-mates sharing the attribute → points.
 _CLUB = {7: 3, 4: 2, 2: 1}
 _LEAGUE = {8: 3, 5: 2, 3: 1}
@@ -37,6 +39,7 @@ class Candidate:
     market_value: int  # BIN — used for "least club value lost"
     source: str  # "club" | "market"
     untradeable: bool = False
+    assigned_position: str = ""  # formation slot this card fills (v2)
 
     @property
     def is_icon(self) -> bool:
@@ -135,6 +138,7 @@ def solve(
     min_rating: int = 0,
     min_chemistry: int = 0,
     objective: str = "cheapest",
+    formation: str | None = None,
 ) -> Solution:
     if len(pool) < size:
         return Solution([], 0, 0, 0, 0, feasible=False, unmet=["Not enough players in pool"])
@@ -190,6 +194,41 @@ def solve(
         squad.append(in_c)
         remaining.append(out_p)
 
+    # --- Phase 3: make the squad fillable by the formation (v2) --------------
+    slots = slots_for(formation) if formation else None
+    if slots:
+        for _ in range(300):
+            positions = [c.position for c in squad]
+            current = matched_count(positions, slots)
+            if current >= size:
+                break
+            best_swap: tuple[Candidate, Candidate] | None = None
+            best_score: tuple[int, int] | None = None
+            for out_p in squad:
+                base = [c for c in squad if c is not out_p]
+                for in_c in remaining:
+                    trial = base + [in_c]
+                    if squad_rating(trial) < min_rating or chemistry(trial) < min_chemistry:
+                        continue
+                    mc = matched_count([c.position for c in trial], slots)
+                    score = (mc, -(_delta_weight(in_c, objective) - _delta_weight(out_p, objective)))
+                    if best_score is None or score > best_score:
+                        best_score = score
+                        best_swap = (out_p, in_c)
+            if best_swap is None or best_score is None or best_score[0] <= current:
+                break
+            out_p, in_c = best_swap
+            squad.remove(out_p)
+            remaining.remove(in_c)
+            squad.append(in_c)
+            remaining.append(out_p)
+
+        # Attach the assigned slot position to each card for the UI.
+        placement = assign_partial([c.position for c in squad], slots)
+        for slot_idx, player_idx in enumerate(placement):
+            if player_idx != -1:
+                squad[player_idx].assigned_position = slots[slot_idx]
+
     rating = squad_rating(squad)
     chem = chemistry(squad)
     to_buy = [c for c in squad if c.source == "market"]
@@ -201,6 +240,8 @@ def solve(
         unmet.append(f"Squad rating {rating} < required {min_rating}")
     if chem < min_chemistry:
         unmet.append(f"Chemistry {chem} < required {min_chemistry}")
+    if slots and matched_count([c.position for c in squad], slots) < size:
+        unmet.append(f"Squad cannot fill the {formation} formation")
 
     return Solution(
         squad=sorted(squad, key=lambda c: c.rating, reverse=True),

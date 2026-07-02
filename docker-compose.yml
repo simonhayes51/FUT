@@ -29,11 +29,36 @@ services:
       DATABASE_URL: postgresql+psycopg2://fcedge:fcedge@postgres:5432/fcedge
       REDIS_URL: redis://redis:6379/0
       CORS_ORIGINS: http://localhost:3000
+      # In production the ticker is driven by Celery beat; the API workers just
+      # subscribe to Redis and fan out to their WebSocket clients.
+      ENABLE_TICKER: "false"
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
+
+  worker:
+    build: ./apps/api
+    command: celery -A app.celery_app.celery worker --loglevel=info
+    environment:
+      DATABASE_URL: postgresql+psycopg2://fcedge:fcedge@postgres:5432/fcedge
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+      - api
+
+  beat:
+    build: ./apps/api
+    command: celery -A app.celery_app.celery beat --loglevel=info
+    environment:
+      DATABASE_URL: postgresql+psycopg2://fcedge:fcedge@postgres:5432/fcedge
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+      - worker
 
   web:
     build: ./apps/web
