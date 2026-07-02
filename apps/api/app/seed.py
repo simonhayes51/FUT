@@ -311,5 +311,30 @@ def run() -> None:
         db.close()
 
 
-if __name__ == "__main__":
+def seed_if_empty() -> None:
+    """Seed only when there are no players yet — safe to run on every boot."""
+    from sqlalchemy import func, select
+
+    from .models import Player
+
+    db = SessionLocal()
+    try:
+        count = db.scalar(select(func.count()).select_from(Player)) or 0
+    except Exception:
+        count = 0  # tables not created yet
+    finally:
+        db.close()
+
+    if count:
+        print(f"Database already has {count} players — skipping seed.")
+        return
     run()
+
+
+if __name__ == "__main__":
+    import sys
+
+    if "--if-empty" in sys.argv:
+        seed_if_empty()
+    else:
+        run()

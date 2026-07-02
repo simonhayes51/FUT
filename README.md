@@ -38,6 +38,10 @@ SBCs, a demo portfolio) so the product is fully explorable with zero configurati
 
 ## Quick start
 
+> Deploying to Railway? See **[docs/DEPLOY.md](docs/DEPLOY.md)** — it's a
+> monorepo, so each app deploys as its own service (this fixes both the Railpack
+> "could not determine how to build" error and the "Can't reach the API" screen).
+
 ### Option A — Docker (full Postgres + Redis stack)
 
 ```bash

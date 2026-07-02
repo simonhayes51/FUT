@@ -15,6 +15,6 @@ COPY . .
 
 EXPOSE 8000
 
-# Seed on first boot then serve. In production, seeding is a one-off job and
-# this becomes a plain uvicorn command.
-CMD ["sh", "-c", "python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Seed only when the database is empty (so redeploys don't wipe data), then
+# serve on Railway's $PORT (defaults to 8000 locally).
+CMD ["sh", "-c", "python -m app.seed --if-empty && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
