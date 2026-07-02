@@ -17,6 +17,7 @@ from sqlalchemy import delete
 
 from .database import Base, SessionLocal, engine
 from .models import (
+    ClubPlayer,
     Investment,
     MarketAnalytics,
     Player,
@@ -64,14 +65,59 @@ ROSTER = [
     ("Palmer", 87, "CAM", "Chelsea", "Premier League", "England", "Gold", 230_000),
 ]
 
+# name, category, requirements(text), reward, cost, pack, rating, difficulty,
+# repeatable, formation, min_rating, min_chemistry
 SBCS = [
-    ("85+ Upgrade", "Upgrade", "85-rated squad", "85+ Rare Player Pick", 68_000, 90_000, 78, "Easy", True),
-    ("Marquee Matchups", "Challenge", "Two 84-rated squads", "Mixed Players Pack", 24_000, 30_000, 71, "Easy", False),
-    ("TOTW Player: Wirtz", "Player", "88-rated squad + chem", "89 Wirtz (untradeable)", 175_000, 0, 62, "Medium", False),
-    ("Icon: Gullit", "Icon", "Three 86-88 squads", "92 Gullit (untradeable)", 640_000, 0, 84, "Hard", False),
-    ("Foundations III", "Foundation", "83-rated squad", "Small Gold Players Pack", 9_500, 14_000, 66, "Easy", True),
-    ("League SBC: Premier League", "League", "Premier League x11", "Rare Electrum Players Pack", 33_000, 45_000, 69, "Medium", False),
+    ("Foundations III", "Foundation", "82-rated squad · 15 chem", "Small Gold Players Pack", 9_500, 14_000, 66, "Easy", True, "4-4-2", 82, 15),
+    ("Marquee Matchups", "Challenge", "84-rated squad · 20 chem", "Mixed Players Pack", 24_000, 30_000, 71, "Easy", False, "4-3-3", 84, 20),
+    ("85+ Upgrade", "Upgrade", "85-rated squad · 22 chem", "85+ Rare Player Pick", 68_000, 90_000, 78, "Medium", True, "4-3-3", 85, 22),
+    ("TOTW Player: Wirtz", "Player", "87-rated squad · 25 chem", "89 Wirtz (untradeable)", 175_000, 0, 62, "Medium", False, "4-2-3-1", 87, 25),
+    ("League SBC: Premier League", "League", "84-rated · 26 chem", "Rare Electrum Players Pack", 33_000, 45_000, 69, "Medium", False, "4-3-3", 84, 26),
+    ("Icon: Gullit", "Icon", "88-rated squad · 28 chem", "92 Gullit (untradeable)", 640_000, 0, 84, "Hard", False, "4-3-3", 88, 28),
 ]
+
+# Fodder catalogue: generic golds (78-86) used to fill and solve SBCs. Clustered
+# by league/nation so chemistry is achievable. (rating → typical BIN discard.)
+FODDER_LEAGUES = {
+    "Premier League": ["England", "England", "Brazil", "France", "Spain", "Portugal"],
+    "LALIGA EA SPORTS": ["Spain", "Spain", "Argentina", "Brazil", "France", "Uruguay"],
+    "Serie A": ["Italy", "Italy", "Argentina", "France", "Brazil", "Serbia"],
+    "Bundesliga": ["Germany", "Germany", "Austria", "France", "Japan", "Netherlands"],
+    "Ligue 1": ["France", "France", "Morocco", "Brazil", "Senegal", "Spain"],
+}
+_FIRST = ["Alex", "Marco", "Luca", "Diego", "Tom", "Leon", "Sam", "Karim", "Yuki",
+          "Pavel", "Noah", "Ivan", "Bruno", "Kai", "Omar", "Felix", "Dani", "Ren"]
+_LAST = ["Silva", "Costa", "Meyer", "Rossi", "Dubois", "Novak", "Kane", "Sané",
+         "Torres", "Bauer", "Moreau", "Popov", "Haas", "Vidal", "Berg", "Fischer",
+         "Nagy", "Weber", "Lopez", "Traoré", "Conti", "Petit", "Ricci", "Sousa"]
+
+
+def _fodder_price(rating: int) -> int:
+    # Rough discard-value curve fans out steeply at the top end.
+    table = {78: 550, 79: 650, 80: 800, 81: 1100, 82: 1600, 83: 2600,
+             84: 4500, 85: 9000, 86: 16000}
+    return int(table.get(rating, 700) * RNG.uniform(0.9, 1.15))
+
+
+def _make_fodder() -> list[tuple]:
+    rows: list[tuple] = []
+    positions = ["GK", "CB", "RB", "LB", "CDM", "CM", "CAM", "RW", "LW", "ST"]
+    used: set[str] = set()
+    for league, nations in FODDER_LEAGUES.items():
+        for _ in range(28):  # ~28 per league → 140 fodder cards
+            rating = RNG.choices(
+                [78, 79, 80, 81, 82, 83, 84, 85, 86],
+                weights=[8, 12, 16, 16, 14, 12, 9, 7, 6],
+            )[0]
+            name = f"{RNG.choice(_FIRST)} {RNG.choice(_LAST)}"
+            while name in used:
+                name = f"{RNG.choice(_FIRST)} {RNG.choice(_LAST)}"
+            used.add(name)
+            rows.append((
+                name, rating, RNG.choice(positions), f"{league.split()[0]} FC",
+                league, RNG.choice(nations), "Gold", _fodder_price(rating),
+            ))
+    return rows
 
 
 def _price_series(base: int, hours: int) -> list[int]:
@@ -147,6 +193,21 @@ def run() -> None:
                 )
             )
 
+        # --- Fodder catalogue (SBC solve material) ---------------------------
+        # Lightweight: a current price only, no history/analytics, so they stay
+        # out of the trending/scanner surfaces but are searchable and solvable.
+        fodder: list[Player] = []
+        for name, rating, pos, club, league, nation, ctype, price in _make_fodder():
+            fp = Player(
+                name=name, rating=rating, position=pos, club=club, league=league,
+                nation=nation, card_type=ctype, price=price, prev_price=price,
+                price_change_pct=0.0,
+            )
+            db.add(fp)
+            db.flush()
+            fodder.append(fp)
+        players.extend(fodder)
+
         # --- Demo user + portfolio -------------------------------------------
         user = User(
             email="simon@fcedge.app",
@@ -158,7 +219,9 @@ def run() -> None:
         db.add(user)
         db.flush()
 
-        for player in RNG.sample(players, 5):
+        stars = players[: len(ROSTER)]  # tradeable market cards, not fodder
+
+        for player in RNG.sample(stars, 5):
             db.add(
                 Investment(
                     user_id=user.id,
@@ -169,7 +232,7 @@ def run() -> None:
             )
             db.add(WatchlistItem(user_id=user.id, player_id=player.id))
 
-        for player in RNG.sample(players, 8):
+        for player in RNG.sample(stars, 8):
             buy = int(player.prev_price * RNG.uniform(0.82, 0.94))
             sell = int(player.prev_price * RNG.uniform(1.0, 1.18))
             db.add(
@@ -183,7 +246,7 @@ def run() -> None:
                 )
             )
 
-        for player in RNG.sample(players, 4):
+        for player in RNG.sample(stars, 4):
             db.add(
                 PriceAlert(
                     user_id=user.id,
@@ -193,7 +256,32 @@ def run() -> None:
                 )
             )
 
-        for name, cat, req, reward, cost, pack, rating, diff, repeat in SBCS:
+        # --- The user's club (raw material for the AI SBC Solver) ------------
+        # Own most of the fodder, some duplicated, plus a couple of icons and
+        # a favourite star so the "protect" options are demonstrable.
+        club_pool = RNG.sample(fodder, int(len(fodder) * 0.8))
+        for fp in club_pool:
+            db.add(
+                ClubPlayer(
+                    user_id=user.id,
+                    player_id=fp.id,
+                    quantity=RNG.choices([1, 2, 3], weights=[7, 2, 1])[0],
+                    untradeable=RNG.random() < 0.35,
+                    first_owner=RNG.random() < 0.25,
+                )
+            )
+        icons = [p for p in stars if p.card_type == "Icon"]
+        for ic in icons:
+            db.add(
+                ClubPlayer(user_id=user.id, player_id=ic.id, quantity=1,
+                           untradeable=True, is_favourite=True)
+            )
+        # A favourite gold the user never wants burned.
+        fav = next(p for p in stars if p.name == "Saka")
+        db.add(ClubPlayer(user_id=user.id, player_id=fav.id, quantity=1,
+                          untradeable=True, is_favourite=True))
+
+        for name, cat, req, reward, cost, pack, rating, diff, repeat, formation, min_r, min_c in SBCS:
             db.add(
                 SBC(
                     name=name,
@@ -205,14 +293,19 @@ def run() -> None:
                     value_rating=rating,
                     difficulty=diff,
                     repeatable=repeat,
+                    formation=formation,
+                    squad_size=11,
+                    min_rating=min_r,
+                    min_chemistry=min_c,
                     expires_at=now + dt.timedelta(days=RNG.randint(2, 14)),
                 )
             )
 
         db.commit()
+        club_count = len(club_pool) + len(icons) + 1
         print(
-            f"Seeded {len(players)} players, {hours // 3 * len(players)} price points, "
-            f"{len(SBCS)} SBCs and demo user {user.email}."
+            f"Seeded {len(players)} players ({len(fodder)} fodder), "
+            f"{len(SBCS)} SBCs, {club_count} club players and demo user {user.email}."
         )
     finally:
         db.close()

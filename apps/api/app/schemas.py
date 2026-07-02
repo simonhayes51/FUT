@@ -93,6 +93,65 @@ class SBCOut(BaseModel):
     value_rating: int
     difficulty: str
     repeatable: bool
+    formation: str
+    squad_size: int
+    min_rating: int
+    min_chemistry: int
+
+
+class SolveOptions(BaseModel):
+    objective: str = "cheapest"  # cheapest | highest_rating | min_club_loss
+    use_club: bool = True  # use players you already own
+    buy_missing: bool = True  # allow buying market fodder to fill gaps
+    protect_icons: bool = True
+    protect_favourites: bool = True
+    protect_first_owner: bool = False
+    max_card_rating: int | None = None  # don't consume cards above this rating
+
+
+class SquadSlot(BaseModel):
+    player_id: int
+    name: str
+    rating: int
+    position: str
+    club: str
+    league: str
+    nation: str
+    card_type: str
+    source: str  # club | market
+    cost: int
+    market_value: int
+
+
+class SolveResult(BaseModel):
+    sbc_id: int
+    sbc_name: str
+    objective: str
+    feasible: bool
+    squad_rating: int
+    required_rating: int
+    chemistry: int
+    required_chemistry: int
+    total_cost: int  # coins to buy the missing cards
+    club_value_used: int  # value of owned cards consumed
+    squad: list[SquadSlot]
+    to_buy: list[SquadSlot]
+    unmet: list[str]
+
+
+class ClubPlayerOut(BaseModel):
+    player_id: int
+    name: str
+    rating: int
+    position: str
+    club: str
+    league: str
+    nation: str
+    card_type: str
+    quantity: int
+    untradeable: bool
+    is_favourite: bool
+    market_value: int
 
 
 class TaxResult(BaseModel):

@@ -83,4 +83,65 @@ export interface SBC {
   value_rating: number;
   difficulty: string;
   repeatable: boolean;
+  formation: string;
+  squad_size: number;
+  min_rating: number;
+  min_chemistry: number;
+}
+
+export type SolveObjective = "cheapest" | "highest_rating" | "min_club_loss";
+
+export interface SolveOptions {
+  objective: SolveObjective;
+  use_club: boolean;
+  buy_missing: boolean;
+  protect_icons: boolean;
+  protect_favourites: boolean;
+  protect_first_owner: boolean;
+  max_card_rating?: number | null;
+}
+
+export interface SquadSlot {
+  player_id: number;
+  name: string;
+  rating: number;
+  position: string;
+  club: string;
+  league: string;
+  nation: string;
+  card_type: string;
+  source: "club" | "market";
+  cost: number;
+  market_value: number;
+}
+
+export interface SolveResult {
+  sbc_id: number;
+  sbc_name: string;
+  objective: SolveObjective;
+  feasible: boolean;
+  squad_rating: number;
+  required_rating: number;
+  chemistry: number;
+  required_chemistry: number;
+  total_cost: number;
+  club_value_used: number;
+  squad: SquadSlot[];
+  to_buy: SquadSlot[];
+  unmet: string[];
+}
+
+export interface ClubPlayer {
+  player_id: number;
+  name: string;
+  rating: number;
+  position: string;
+  club: string;
+  league: string;
+  nation: string;
+  card_type: string;
+  quantity: number;
+  untradeable: boolean;
+  is_favourite: boolean;
+  market_value: number;
 }

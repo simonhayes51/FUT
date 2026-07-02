@@ -1,9 +1,12 @@
 import type {
+  ClubPlayer,
   Dashboard,
   PlayerDetail,
   PlayerSummary,
   SBC,
   Scanner,
+  SolveOptions,
+  SolveResult,
 } from "./types";
 
 const BASE =
@@ -13,6 +16,18 @@ async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     // Prices move constantly — always fetch fresh, let React Query cache.
     cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`API ${res.status}: ${path}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     throw new Error(`API ${res.status}: ${path}`);
@@ -33,4 +48,8 @@ export const api = {
   },
   player: (id: number | string) => get<PlayerDetail>(`/players/${id}`),
   sbcs: () => get<SBC[]>("/sbcs"),
+  sbc: (id: number | string) => get<SBC>(`/sbcs/${id}`),
+  solve: (id: number | string, opts: SolveOptions) =>
+    post<SolveResult>(`/sbcs/${id}/solve`, opts),
+  club: () => get<ClubPlayer[]>("/club"),
 };

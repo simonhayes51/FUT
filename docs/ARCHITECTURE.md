@@ -40,7 +40,8 @@
 | `investments` | Open positions | Drives club value + portfolio |
 | `trades` | Closed buy→sell cycles | `net_profit` applies EA's 5% tax |
 | `watchlist_items` / `price_alerts` | User market tracking | Alert fan-out via Celery + push |
-| `sbcs` | SBC catalogue | Cost, pack value, value rating, expiry |
+| `sbcs` | SBC catalogue | Cost, pack value, value rating, expiry + structured solve constraints (formation, min rating, min chemistry) |
+| `club_players` | The user's owned cards | Quantity + protection flags; the AI SBC Solver's raw material |
 
 ## The AI rating engine (`app/ai.py`)
 
@@ -54,6 +55,20 @@
 It returns a `verdict` (BUY/HOLD/SELL/AVOID), confidence, risk, time horizon,
 ROI (net of 5% tax), suggested buy/sell/peak prices and a human-readable list of
 reasons. Because it is deterministic it is trivially testable and reproducible.
+
+## The AI SBC Solver (`app/solver.py`)
+
+Two game mechanics are modelled exactly: **squad rating** (FUT's
+above-average-weighted formula) and **chemistry** (the FC 24/25 count-based
+club/league/nation model, capped at 33). Given a candidate pool (the user's club
+at zero coin cost, plus market fodder to buy), `solve()` seeds the cheapest
+eleven and runs cost-aware local-search swaps to reach the SBC's required rating
+and chemistry, optimising for one of three objectives — *cheapest*,
+*highest_rating*, *min_club_loss* — while honouring protect-icons/favourites/
+first-owner flags. It is deterministic (stable sort + fixed tie-breaks) and
+returns the squad, the coins-to-buy shopping list, club value consumed, and any
+unmet constraints. Production swaps the heuristic for an ILP/constraint solver
+behind the identical interface.
 
 ## Scaling notes (how today's slice grows to "billions of price records")
 

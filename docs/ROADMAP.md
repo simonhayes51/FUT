@@ -7,6 +7,9 @@ How the full product spec maps onto phases. **Phase 0 is what ships in this repo
 - Monorepo, Docker stack, SQLite/Postgres portability, seeded demo data.
 - Dashboard, AI rating engine, Market Scanner, Live Market search, Player
   Intelligence page with interactive charts, SBC Centre.
+- **AI SBC Solver** — real squad-rating + chemistry engine with cheapest /
+  highest-rated / least-club-loss objectives, protect flags and a shopping list.
+- **Club Manager** — imported club, duplicates, fodder value, protection flags.
 - Premium dark/glass design system, PWA manifest, mobile-first layout.
 
 ## Phase 1 — Live data & realtime
@@ -27,8 +30,11 @@ How the full product spec maps onto phases. **Phase 0 is what ships in this repo
 
 ## Phase 3 — Club & squad intelligence
 
-- **Club import** → duplicates, fodder value, evolution candidates, recommended sales.
-- **AI SBC Solver** (cheapest / highest-rated / protect icons & first-owner, repeatable).
+- **Club import** from EA (live) → evolution candidates, recommended sales
+  (the club *model* and manual/seeded club already ship in Phase 0).
+- **AI SBC Solver — v2**: exact formation slotting, ILP/constraint back-end,
+  one-click auto-buy execution, repeat-solver for entire SBC sets
+  (the cheapest/highest-rated/protect solver ships in Phase 0).
 - **Squad Builder** with chemistry / role / PlayStyle optimisers and meta templates.
 - **Evolution Centre** with projected ratings and best-value evolution finder.
 

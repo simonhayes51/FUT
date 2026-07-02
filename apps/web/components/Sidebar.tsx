@@ -6,6 +6,7 @@ import {
   BrainCircuit,
   LayoutDashboard,
   LineChart,
+  Shield,
   Sparkles,
   Trophy,
   Wallet,
@@ -16,7 +17,8 @@ import { usePathname } from "next/navigation";
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/market", label: "Live Market", icon: LineChart },
-  { href: "/sbc", label: "SBC Centre", icon: Boxes },
+  { href: "/sbc", label: "SBC Solver", icon: Boxes },
+  { href: "/club", label: "My Club", icon: Shield },
   { href: "/portfolio", label: "Portfolio", icon: Wallet, soon: true },
   { href: "/squad", label: "Squad Builder", icon: Trophy, soon: true },
   { href: "/coach", label: "AI Coach", icon: BrainCircuit, soon: true },
@@ -44,7 +46,8 @@ export function Sidebar() {
 
       <nav className="flex flex-col gap-1">
         {NAV.map(({ href, label, icon: Icon, soon }) => {
-          const active = pathname === href;
+          const active =
+            href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
             <Link
               key={href}

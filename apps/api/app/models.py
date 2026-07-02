@@ -216,3 +216,32 @@ class SBC(Base):
     value_rating: Mapped[int] = mapped_column(Integer, default=0)  # 0-100
     difficulty: Mapped[str] = mapped_column(String(20), default="Medium")
     repeatable: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Structured solve constraints. The AI SBC Solver reads these directly.
+    formation: Mapped[str] = mapped_column(String(12), default="4-3-3")
+    squad_size: Mapped[int] = mapped_column(Integer, default=11)
+    min_rating: Mapped[int] = mapped_column(Integer, default=0)  # required squad rating
+    min_chemistry: Mapped[int] = mapped_column(Integer, default=0)  # 0-33
+
+
+class ClubPlayer(Base):
+    """A player the user owns in their club — the raw material for SBC solves.
+
+    ``quantity`` collapses duplicates. Protection flags let the solver honour
+    "don't use my icons / first owners / favourites" options.
+    """
+
+    __tablename__ = "club_players"
+    __table_args__ = (
+        UniqueConstraint("user_id", "player_id", name="uq_club_user_player"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"))
+    quantity: Mapped[int] = mapped_column(Integer, default=1)
+    untradeable: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_favourite: Mapped[bool] = mapped_column(Boolean, default=False)
+    first_owner: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    player: Mapped[Player] = relationship()

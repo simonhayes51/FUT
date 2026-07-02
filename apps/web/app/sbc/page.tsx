@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Boxes, Clock } from "lucide-react";
+import { Boxes, Clock, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { coins, scoreColor, timeUntil } from "@/lib/format";
 import type { SBC } from "@/lib/types";
@@ -37,7 +38,7 @@ function SBCCard({ sbc }: { sbc: SBC }) {
   const profit = sbc.pack_value - sbc.estimated_cost;
   const worth = sbc.value_rating >= 70;
   return (
-    <div className="glass glass-hover p-5">
+    <div className="glass glass-hover flex flex-col p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-gradient shadow-glow">
@@ -77,6 +78,19 @@ function SBCCard({ sbc }: { sbc: SBC }) {
         </span>
       </div>
       <div className="mt-3 text-xs text-white/50">Reward: {sbc.reward}</div>
+
+      <div className="mt-2 flex items-center gap-3 text-[11px] text-white/40">
+        <span>{sbc.formation}</span>
+        <span>Rating ≥ {sbc.min_rating}</span>
+        <span>Chem ≥ {sbc.min_chemistry}</span>
+      </div>
+
+      <Link
+        href={`/sbc/${sbc.id}`}
+        className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-gradient py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+      >
+        <Sparkles className="h-4 w-4" /> AI Solve
+      </Link>
     </div>
   );
 }

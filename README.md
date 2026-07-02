@@ -27,6 +27,8 @@ What runs today, fully wired frontend → API → database:
 | **Live Market** — player search + league/rating filters | ✅ |
 | **Player Intelligence page** — interactive price chart (1D/1W/1M/All), lowest/highest BIN, volume, volatility, supply/demand | ✅ |
 | **SBC Centre** — cost, pack value, net profit, value rating, expiry, "worth completing?" verdict | ✅ |
+| **AI SBC Solver** — real squad-building engine (FUT squad-rating + FC 24/25 chemistry) that solves each SBC for *cheapest / highest-rated / least club value lost*, honours protect-icons/favourites/first-owner, and produces a shopping list of missing cards | ✅ |
+| **Club Manager** — imported club with duplicates, fodder value, protection flags (the solver's raw material) | ✅ |
 | **Premium design system** — dark, glassmorphism, purple/blue gradients, neon accents, Framer Motion, mobile-first, PWA manifest | ✅ |
 
 Everything is backed by a realistic **seeded dataset** (30 players, ~7k price points,
@@ -65,9 +67,11 @@ npm run dev                     # http://localhost:3000
 apps/
   api/   FastAPI + SQLAlchemy + Pydantic
          └─ ai.py           deterministic, explainable rating engine
+         └─ solver.py       AI SBC Solver — squad-rating + chemistry + search
          └─ models.py       players · price_history · analytics · users
-                            · investments · trades · watchlist · alerts · sbcs
-         └─ routers/        dashboard · market · players · sbc
+                            · investments · trades · watchlist · alerts
+                            · sbcs · club_players
+         └─ routers/        dashboard · market · players · sbc · club
          └─ seed.py         reproducible demo dataset
   web/   Next.js 14 (App Router) + TS + Tailwind + Framer Motion
          + React Query + Zustand
